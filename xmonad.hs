@@ -1,26 +1,20 @@
-import Data.Map (fromList)
-import System.Exit
+import Data.Map ( fromList )
+import System.Exit ( exitSuccess )
 
 import XMonad
-import XMonad.Actions.SpawnOn
-import XMonad.Layout.NoBorders
-import XMonad.Hooks.ManageDocks
-import XMonad.Hooks.DynamicLog(xmobar)
-import XMonad.Util.Run
-import XMonad.Hooks.ManageHelpers
+import XMonad.Layout.NoBorders ( smartBorders )
+import XMonad.Hooks.ManageDocks ( avoidStruts, manageDocks )
+import XMonad.Hooks.DynamicLog ( xmobar )
+import XMonad.Hooks.ManageHelpers ( composeOne, (-?>), isDialog, doCenterFloat, transience )
 
-import XMonad.Actions.GroupNavigation (Direction( History ), historyHook, nextMatch)
-import XMonad.Layout.Grid
-import XMonad.Layout.IndependentScreens
-import XMonad.Layout.NoBorders
-import XMonad.Layout.MultiToggle
-import XMonad.Layout.MultiToggle.Instances
-import XMonad.Layout.BinarySpacePartition (emptyBSP)
-import XMonad.Util.EZConfig
-import XMonad.Util.Run
-import XMonad.Prompt
-import XMonad.Prompt.ConfirmPrompt
-import XMonad.Prompt.Shell
+import XMonad.Actions.GroupNavigation ( Direction( History ), historyHook, nextMatch )
+import XMonad.Layout.MultiToggle ( mkToggle, single, Toggle(Toggle) )
+import XMonad.Layout.MultiToggle.Instances ( StdTransformers( FULL ) )
+import XMonad.Layout.BinarySpacePartition ( emptyBSP )
+import XMonad.Util.EZConfig ( additionalKeysP ) 
+import XMonad.Prompt ( font, promptBorderWidth, alwaysHighlight, position, XPPosition( Top ) )
+import XMonad.Prompt.ConfirmPrompt ( confirmPrompt )
+import XMonad.Prompt.Shell ( shellPrompt )
 import qualified XMonad.StackSet as W
 
 
