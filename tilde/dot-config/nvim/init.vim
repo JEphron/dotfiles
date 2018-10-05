@@ -1,113 +1,134 @@
-set runtimepath^=~/.vim runtimepath+=~/.vim/after
-let &packpath = &runtimepath
+let mapleader=" " "Leader is space
+let maplocalleader=" " "LocalLeader is space
 
-" Leader
-let mapleader = " "
+let g:python3_host_prog = '/Users/jordanephron/miniconda3/bin/python3'
+let g:python_host_prog  = '/usr/bin/python2.7'
 
-call plug#begin('~/.vim/plugged')
-" useful stuff
-Plug 'tpope/vim-surround'
+call plug#begin()
+
+" Bracket magic
+Plug 'kovisoft/paredit'
+
+" insert and delete bracket pairs automatically
+Plug 'jiangmiao/auto-pairs'
+
+" File browser
+Plug 'scrooloose/nerdtree'
+
+" Fast file switcher
 Plug 'ctrlpvim/ctrlp.vim'
 
-" langs
-Plug 'sophacles/vim-processing'
-Plug 'dag/vim-fish'
-Plug 'rust-lang/rust.vim'
-Plug 'reasonml-editor/vim-reason-plus'
-Plug 'ElmCast/elm-vim'
-Plug 'cespare/vim-toml'
-Plug 'zah/nim.vim/'
+" Keys to work with matched pairs of braces
+Plug 'tpope/vim-surround'
 
-" misc
+" Kotlin language support
+Plug 'udalov/kotlin-vim'
+
+" Elm language support
+Plug 'ElmCast/elm-vim'
+
+" TOML markup language support
+Plug 'cespare/vim-toml'
+
+" Elixir language support
+Plug 'elixir-editors/vim-elixir'
+
+" ReasonML language support
+Plug 'reasonml-editor/vim-reason-plus'
+
+" Typescript language server support
+Plug 'Quramy/tsuquyomi'
+
+" Typescript syntax support
+Plug 'leafgarland/typescript-vim'
+
+Plug 'sbdchd/neoformat'
+
 Plug 'autozimu/LanguageClient-neovim', {
-    \ 'branch': 'next',
-    \ 'do': 'bash install.sh',
-    \ }
-Plug 'junegunn/fzf'
-Plug 'Shougo/deoplete.nvim', { 'do': ':UpdateRemotePlugins' }
+            \ 'branch': 'next',
+            \ 'do': 'bash install.sh',
+            \ }
+
 call plug#end()
 
-" set tab width to 4 spaces
-set tabstop=4
+set expandtab "convert tabs to spaces
+set tabstop=4 "indent 4 spaces per tab
 set shiftwidth=4
-
-" wrap after 80 characters
-set textwidth=80
-
-" shortcut for run
-" nnoremap <C-p> :silent make\|redraw!\|cw<CR>
-
-" stupid thinkpad keyboard layout
-inoremap <F1> <Esc>
-
-" enable syntax coloring
-syntax on
-
-" remove ugly background color in gutter
-highlight clear SignColumn
-
-" buffer stuff (languageClient needs this) 
+set softtabstop=4
+set hidden "switch buffers without writing
+set number "show line numbers
 set hidden
+set autoindent
 
-" Line numbers
-set number
 
-" language servers
+"LanguageClient config
 let g:LanguageClient_serverCommands = {
-    \ 'reason': ['ocaml-language-server', '--stdio'],
-    \ 'ocaml': ['ocaml-language-server', '--stdio'],
-    \ 'rust': ['rustup', 'run', 'nightly', 'rls'],
-    \ }
+            \ 'reason': ['ocaml-language-server', '--stdio'],
+            \ 'ocaml': ['ocaml-language-server', '--stdio'],
+            \ 'javascript': ['/Users/jordanephron/.npm-global/bin/javascript-typescript-stdio'],
+            \ 'typescript': ['/Users/jordanephron/.npm-global/bin/javascript-typescript-stdio'],
+            \ }
 
-nnoremap <silent> K :call LanguageClient#textDocument_hover()<CR>
-nnoremap <silent> gd :call LanguageClient#textDocument_definition()<CR>
-nnoremap <silent> <F2> :call LanguageClient#textDocument_rename()<CR>
-nnoremap <silent> gf :call LanguageClient_textDocument_formatting()<cr>
-set completefunc=LanguageClient#complete
+"LanguageClient bindings
+nnoremap <silent> gd :call LanguageClient_textDocument_definition()<cr>
+nnoremap <silent> ff :call LanguageClient_textDocument_formatting()<cr>
+nnoremap <silent> <cr> :call LanguageClient_textDocument_hover()<cr>
+nnoremap <silent> <F2> :call LanguageClient_textDocument_rename()<cr>
 
-" Hide the search highlight (':noh' for 'no highlight')
+"edit the vimrc
+nmap <silent> <leader>cfv :e $MYVIMRC<CR>
+"reload the vimrc
+nmap <silent> <leader>so :so $MYVIMRC<CR>
+
+"close buffer
+nmap <silent> <leader>q :bd<CR>
+
+"grabbed from https://github.com/mutewinter/dot_vim/blob/master/mappings.vim
+noremap H ^
+noremap L $
+noremap ^ <nop>
+noremap $ <nop>
+
+"hide highlighting (from search)
 nnoremap <Leader>h :noh<CR>
 
-" Reload the vimrc (':so' for 'source')
-nnoremap <Leader>so :so $MYVIMRC<CR>
+"find and replace using \s
+nnoremap <Leader>s :%s/\<<C-r><C-w>\>//g<Left><Left>
 
-" nnoremap <buffer> <F9> :exec 'st python' %<CR>
+"copy to system clipboard
+vnoremap <Leader>p "*y
+nnoremap <Leader>p "*y
 
+"split vertical
+nnoremap <c-w>\ :vs<CR>
+"split horizontal
+nnoremap <c-w>- :sp<CR>
+"close current window
+nnoremap <c-w>x :on<CR>
+
+"ctrl-p buffer management
+noremap <c-p> :CtrlPMRU<cr>
+inoremap <c-p> <esc>:CtrlPMRU<cr>
 let g:ctrlp_cmd = 'CtrlPMRU'
+let g:ctrlp_working_path_mode = 'w'
 
-filetype plugin on
-set omnifunc=syntaxcomplete#Complete
+"elm stuff
+autocmd FileType elm nnoremap <buffer> <silent> ff :ElmFormat<cr><cr>
 
-" show existing tab with 4 spaces width
-set tabstop=4
-" when indenting with '>', use 4 spaces width
-set shiftwidth=4
-" On pressing tab, insert 4 spaces
-set expandtab
+"javascript stuff
+autocmd FileType javascript nnoremap <buffer> <silent> ff :Neoformat<cr>
 
-" visible tabs
-set list 
-set listchars=tab:>- 
+autocmd FileType html nnoremap <buffer> <silent> ff :!tidy -mi -html -wrap 0 %<cr>call feedkeys("<CR>L")<cr>
 
-" execute commands on visual block 
-" ex: :[range]w ! <some shell command>
-function! VisualCountWords() range
-    let n = @n
-    silent! normal gv"ny
-    echo "Word count:" . system("echo '" . @n . "' | wc -w")
-    let @n = n
-    " bonus: restores the visual selection
-    normal! gv
-endfunction
+"formatter
+let g:neoformat_enabled_javascript = ['prettier']
 
-xnoremap <F6> :call VisualCountWords()<CR>
+"NERDTree stuff
+"quit vim if NERDTree is the only buffer left
+autocmd bufenter * if (winnr("$") == 1 && exists("b:NERDTree") && b:NERDTree.isTabTree()) | q | endif
+"open with C-n
+map <C-n> :NERDTreeToggle<CR>
 
-" random python settings
-au BufNewFile,BufRead *.py set tabstop=4
-au BufNewFile,BufRead *.py set softtabstop=4
-au BufNewFile,BufRead *.py set shiftwidth=4
-au BufNewFile,BufRead *.py set textwidth=79
-au BufNewFile,BufRead *.py set expandtab
-au BufNewFile,BufRead *.py set autoindent
-au BufNewFile,BufRead *.py set fileformat=unix
-
+"colors
+hi Search ctermfg=White
+hi Search ctermbg=Black
