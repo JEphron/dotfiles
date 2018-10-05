@@ -1,0 +1,15 @@
+[alias]
+	co   = checkout
+	ci   = commit
+	di   = diff
+	dis  = diff --staged
+	ds   = diff --staged
+	st   = status
+	br   = branch
+	hist = log --pretty=format:\"%h %ad | %s%d [%an]\" --graph --date=short
+	type = cat-file -t
+	dump = cat-file -p
+	log  = log --stat
+[user]
+	name = jephron
+	email = jephron@nomail.com

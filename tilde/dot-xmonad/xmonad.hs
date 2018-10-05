@@ -2,6 +2,7 @@ import Data.Map ( fromList )
 import System.Exit ( exitSuccess )
 
 import XMonad
+import XMonad.Config
 import XMonad.Layout.NoBorders ( smartBorders )
 import XMonad.Hooks.ManageDocks ( avoidStruts, manageDocks )
 import XMonad.Hooks.DynamicLog ( xmobar )
@@ -16,7 +17,8 @@ import XMonad.Prompt ( font, promptBorderWidth, alwaysHighlight, position, XPPos
 import XMonad.Prompt.ConfirmPrompt ( confirmPrompt )
 import XMonad.Prompt.Shell ( shellPrompt )
 import qualified XMonad.StackSet as W
-
+import XMonad.Actions.CycleRecentWS ( cycleWindowSets )
+import XMonad.Actions.FocusNth ( focusNth' )
 
 superKey = mod1Mask
 
@@ -43,12 +45,64 @@ myConfig = def
               , ("M-S-s", withFocused $ windows . W.sink)                       -- Push window back into tiling
               , ("M-S-q", confirmPrompt myXPConfig "exit" (io exitSuccess))     -- confirm quit x
               -- applications
-              , ("M-x M-f", spawn "firefox-nightly")                              -- spawn firefox
-              , ("M-x M-r", spawn "st ranger")                                    -- spawn ranger
-              , ("M-x M-e", spawn "emacs")                                      -- spawn emacs
+              , ("M-x M-f", spawn "firefox-nightly")                            -- spawn firefox
+              , ("M-x M-r", spawn "st ranger")                                  -- spawn ranger
+              , ("M-x M-e", spawn "emacsclient -c")                             -- spawn emacs
+              , ("M-S-p",   spawn "ffcast -s png ~/Screenshots/\"$(date +%F\\ %T)\".png")   -- take screenshot
               , ("<XF86AudioLowerVolume>",   spawn "amixer sset Master 10-")
               , ("<XF86AudioRaiseVolume>",   spawn "amixer sset Master 10+")
+              , ("<XF86AudioMute>", spawn "amixer -q set Master toggle")
+              --, ("M-S-<Tab>", cycleRecentWS' [xK_Super_L, xK_Shift_L] xK_Tab xK_grave) ppp PPP
+              
           ]
+
+-- modified variant of cycleRecentWS from XMonad.Actions.CycleRecentWS (17)
+-- which does not include visible but non-focused workspaces in the cycle
+cycleRecentWS' = foo options
+ where options w = map (W.view `flip` w) (recentTags w)
+       recentTags w = map W.tag $ W.hidden w ++ [W.workspace (W.current w)]
+
+
+
+
+
+-- todo: cycleWindowFocus
+foo :: (WindowSet -> [WindowSet]) 
+                -> [KeySym]                   
+                -> KeySym                     
+                -> KeySym                     
+                -> X ()
+foo genOptions mods keyNext keyPrev = do
+  options <- gets $ genOptions . windowset
+  XConf {theRoot = root, display = d} <- ask
+  let event = allocaXEvent $ \p -> do
+                maskEvent d (keyPressMask .|. keyReleaseMask) p
+                KeyEvent {ev_event_type = t, ev_keycode = c} <- getEvent p
+                s <- keycodeToKeysym d c 0
+                return (t, s)
+  let setOption n = do windows $ W.modify' $ focusNth' (n `mod` 3)
+                       --windowSet <- withWindowSet
+                       (t, s) <- io event
+                       case () of
+                         () | t == keyPress   && s == keyNext  -> setOption (n+1)
+                            | t == keyPress   && s == keyPrev  -> setOption (n-1)
+                            | t == keyRelease && s `elem` mods -> return ()
+                            | otherwise                        -> setOption n
+  io $ grabKeyboard d root False grabModeAsync grabModeAsync currentTime
+  setOption 0
+  io $ ungrabKeyboard d currentTime
+
+
+
+
+cycref :: [a] -> Int -> a
+cycref l i = l !! (i `mod` length l)
+
+
+
+
+
+
 
 
 -- try to guess the current working directory
