@@ -11,5 +11,5 @@
 	dump = cat-file -p
 	log  = log --stat
 [user]
-	name = jephron
+	name = Jordan Ephron
 	email = jephron@nomail.com

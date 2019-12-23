@@ -27,16 +27,30 @@ fi
 
 # hide the mouse cursor when idle
 unclutter -noevents -idle 2 &
-#unclutter -noevents -idle 2 -grab &
 
-# launch xmobar
+# manage ssh keys
+eval (ssh-agent -c)
+
+# the bottom status bar
 xmobar &
 
-# set key-repeat rate
-xset r rate 200 40
+# notification popups
+dunst &
 
+# set a desktop background 
 # xpmroot ~/background.xpm &
 
-exec xmonad
+# automatically configure hotplugged USB keyboards 
+watchexec -w /dev/input/by-id -d 300 -i ".*tmp.*" "bash -e /home/jephron/.bin/usb-keyboard-in" &
 
+# automatically configure existing keyboards
+bash -e /home/jephron/.bin/usb-keyboard-in
+
+# # key-repeat delay and frequency
+# xset r rate 200 40
+
+# # make capslock into another control key
+# setxkbmap -option ctrl:nocaps
+
+exec xmonad
 

@@ -5,31 +5,36 @@ import XMonad
 import XMonad.Config
 import XMonad.Layout.NoBorders ( smartBorders )
 import XMonad.Hooks.ManageDocks ( avoidStruts, manageDocks )
+import XMonad.Hooks.SetWMName
 import XMonad.Hooks.DynamicLog ( xmobar )
-import XMonad.Hooks.ManageHelpers ( composeOne, (-?>), isDialog, doCenterFloat, transience )
+import XMonad.Hooks.ManageHelpers ( composeOne, (-?>), isDialog, doCenterFloat, transience, doSideFloat, Side( SW ) )
 
 import XMonad.Actions.GroupNavigation ( Direction( History ), historyHook, nextMatch )
 import XMonad.Layout.MultiToggle ( mkToggle, single, Toggle(Toggle) )
 import XMonad.Layout.MultiToggle.Instances ( StdTransformers( FULL ) )
 import XMonad.Layout.BinarySpacePartition ( emptyBSP )
-import XMonad.Util.EZConfig ( additionalKeysP ) 
-import XMonad.Prompt ( font, promptBorderWidth, alwaysHighlight, position, XPPosition( Top ) )
+import XMonad.Util.EZConfig ( additionalKeysP, removeKeysP )
+import XMonad.Prompt ( font, promptBorderWidth, alwaysHighlight, position, XPPosition( Top ), height, XPConfig, sorter, searchPredicate )
 import XMonad.Prompt.ConfirmPrompt ( confirmPrompt )
 import XMonad.Prompt.Shell ( shellPrompt )
 import qualified XMonad.StackSet as W
 import XMonad.Actions.CycleRecentWS ( cycleWindowSets )
 import XMonad.Actions.FocusNth ( focusNth' )
+import XMonad.Prompt.FuzzyMatch as Fuzzy
 
 superKey = mod1Mask
 
-myFont = "'xos4 Terminus:size=8'"
+myFont = "'xos4 Terminus:size=14'"
 stConfig = " -f " ++ myFont
+
+termCommand = "st" ++ stConfig
 
 myConfig = def
             {
-                terminal            = "st" ++ stConfig
+                terminal            = termCommand
               , focusFollowsMouse   = False
-              , modMask             = superKey
+              , modMask             = mod4Mask
+              , startupHook = setWMName "LG3D"
               , focusedBorderColor  = "#335566"
               , normalBorderColor   = "#181000"
               , logHook             = historyHook
@@ -37,7 +42,7 @@ myConfig = def
               , manageHook          = myManageHook <+> manageHook defaultConfig <+> manageDocks
             } `additionalKeysP` [
                 ("M-S-t", spawn "st")                                           -- new terminal
-              , ("M-t",   trySpawnShellAtWindowCwd)                             -- new terminal at cwd
+              , ("M-S-<Return>",trySpawnShellAtWindowCwd)                          -- new terminal at cwd
               , ("M-C-q", spawn "slock")                                        -- lock the screen
               , ("M-p",   shellPrompt myXPConfig)                               -- app launcher
               , ("M-S-f", sendMessage $ Toggle FULL)                            -- toggle fullscreen
@@ -45,16 +50,20 @@ myConfig = def
               , ("M-S-s", withFocused $ windows . W.sink)                       -- Push window back into tiling
               , ("M-S-q", confirmPrompt myXPConfig "exit" (io exitSuccess))     -- confirm quit x
               -- applications
-              , ("M-x M-f", spawn "firefox-nightly")                            -- spawn firefox
-              , ("M-x M-r", spawn "st ranger")                                  -- spawn ranger
+              , ("M-x M-f", spawn "firefox")                                    -- spawn firefox
+              , ("M-x M-r", spawn (termCommand ++ " ranger"))                           -- spawn ranger
               , ("M-x M-e", spawn "emacsclient -c")                             -- spawn emacs
               , ("M-S-p",   spawn "ffcast -s png ~/Screenshots/\"$(date +%F\\ %T)\".png")   -- take screenshot
               , ("<XF86AudioLowerVolume>",   spawn "amixer sset Master 10-")
               , ("<XF86AudioRaiseVolume>",   spawn "amixer sset Master 10+")
               , ("<XF86AudioMute>", spawn "amixer -q set Master toggle")
               --, ("M-S-<Tab>", cycleRecentWS' [xK_Super_L, xK_Shift_L] xK_Tab xK_grave) ppp PPP
-              
-          ]
+            ] `removeKeysP` [
+                "M-<Return>",
+                "M-S-a",
+                "M-S-o",
+                "M-S-p"
+            ]
 
 -- modified variant of cycleRecentWS from XMonad.Actions.CycleRecentWS (17)
 -- which does not include visible but non-focused workspaces in the cycle
@@ -63,14 +72,11 @@ cycleRecentWS' = foo options
        recentTags w = map W.tag $ W.hidden w ++ [W.workspace (W.current w)]
 
 
-
-
-
 -- todo: cycleWindowFocus
-foo :: (WindowSet -> [WindowSet]) 
-                -> [KeySym]                   
-                -> KeySym                     
-                -> KeySym                     
+foo :: (WindowSet -> [WindowSet])
+                -> [KeySym]
+                -> KeySym
+                -> KeySym
                 -> X ()
 foo genOptions mods keyNext keyPrev = do
   options <- gets $ genOptions . windowset
@@ -93,71 +99,65 @@ foo genOptions mods keyNext keyPrev = do
   io $ ungrabKeyboard d currentTime
 
 
-
-
-cycref :: [a] -> Int -> a
-cycref l i = l !! (i `mod` length l)
-
-
-
-
-
-
-
-
 -- try to guess the current working directory
 -- from the window's title and then spawn st there
 -- otherwise just open a terminal at the default path
 trySpawnShellAtWindowCwd :: X()
 trySpawnShellAtWindowCwd =
-    let 
-		spawnShellAtWindowCwd win = do
-			app <- runQuery appName win
-			case app of -- is the current window running an st shell?
-				"st-256color" -> do
-					title <- runQuery title win
-					let cwd = unwords $ tail $ words title
-					spawn $ "st fish -C \"cd '" ++ cwd ++ "'\""
-				_ -> spawn "st"
-    in 
+    let
+        spawnShellAtWindowCwd win = do
+            app <- runQuery appName win
+            case app of -- is the current window running an st shell?
+                "st-256color" -> do
+                    title <- runQuery title win
+                    let cwd = unwords $ tail $ words title
+                    spawn $ termCommand ++ " fish -C \"cd '" ++ cwd ++ "'\""
+                _ -> spawn termCommand 
+    in
         withWindowSet $ \w -> case (W.peek w) of
             Just win -> spawnShellAtWindowCwd win
             Nothing -> spawn "st" -- handling the case where no window is active
 
 --------------------------------------------------------------------------------
 -- | Customize the way 'XMonad.Prompt' looks and behaves
+myXPConfig::XPConfig
 myXPConfig = def
   { position          = Top
   , alwaysHighlight   = True
   , promptBorderWidth = 0
-  , font              = myFont
+  , font              = "xft:xos4 Terminus:size=14"
+  , height            = 48
+  , searchPredicate   = Fuzzy.fuzzyMatch
+  , sorter            = Fuzzy.fuzzySort
   }
 
 --------------------------------------------------------------------------------
 -- | Customize layouts
 myLayout = mkToggle (single FULL) (tiled ||| Mirror tiled ||| emptyBSP)
-	where
-		-- default tiling algorithm partitions the screen into two panes
-		tiled = Tall nmaster delta ratio
+    where
+        -- default tiling algorithm partitions the screen into two panes
+        tiled = Tall nmaster delta ratio
 
-		-- default number of windows in the master pane
-		nmaster = 1
+        -- default number of windows in the master pane
+        nmaster = 1
 
-	        -- default proportion of the screen occupied by master pane
-		ratio = 1/2
+        -- default proportion of the screen occupied by master pane
+        ratio = 1/2
 
-		-- percent of screen to increment by resizing panes
-		delta = 3/100
+        -- percent of screen to increment by resizing panes
+        delta = 3/100
 
 
 --------------------------------------------------------------------------------
-myManageHook = composeOne
-  [ className =? "mpv"    -?> doFloat
-  , isDialog              -?> doCenterFloat
-  , transience																 -- Move transient windows to their parent:
+myManageHook = composeAll
+  [ className =? "mpv"    --> doFloat
+  -- , className =? "processing-core-PApplet"   --> doSideFloat SW
+  -- , className =? "processing-core-PApplet"   --> doF (fmap W.sink . W.peek )
+  , isDialog              --> doCenterFloat
+  -- , transience                                   -- Move transient windows to their parent:
   ]
 
 --------------------------------------------------------------------------------
 main = do
-	xmonad =<< xmobar myConfig
+    xmonad =<< xmobar myConfig
 
