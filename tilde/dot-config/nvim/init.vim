@@ -21,6 +21,9 @@ Plug 'ctrlpvim/ctrlp.vim'
 " Keys to work with matched pairs of braces
 Plug 'tpope/vim-surround'
 
+" comments!
+Plug 'tpope/vim-commentary'
+
 " Kotlin language support
 Plug 'udalov/kotlin-vim'
 
@@ -32,6 +35,9 @@ Plug 'cespare/vim-toml'
 
 " Elixir language support
 Plug 'elixir-editors/vim-elixir'
+
+" Processing.org
+Plug 'sophacles/vim-processing'
 
 " ReasonML language support
 Plug 'reasonml-editor/vim-reason-plus'
@@ -52,6 +58,8 @@ Plug 'autozimu/LanguageClient-neovim', {
 call plug#end()
 
 set expandtab "convert tabs to spaces
+set ignorecase "for searching
+set smartcase "search
 set tabstop=4 "indent 4 spaces per tab
 set shiftwidth=4
 set softtabstop=4
