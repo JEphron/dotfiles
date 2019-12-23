@@ -2,6 +2,8 @@ set -gx PATH /usr/local/bin $PATH /home/jephron/.local/bin /home/jephron/.local/
 
 set -gx PATH $PATH /home/jephron/.cargo/bin
 
+set fish_greeting
+
 #
 # -- variables --
 #
@@ -34,6 +36,7 @@ alias efs="cd ~/Devel/work/efs"
 alias tasks="task"
 alias ta="task add"
 alias light="lightrs"
+alias wttr="curl wttr.in"
 
 
 alias vimcurl=curlvim
@@ -89,7 +92,7 @@ alias cfv="nvim $vim_config_path"
 alias cfx="nvim $xmonad_config_path"
 
 # config xmobar
-alias cfm="nvim $xmobar_config_path"
+alias cfxm="nvim $xmobar_config_path"
 
 function wifi_connect -d "connect to a wifi network" 
 	nmcli dev wifi connect $argv
@@ -116,7 +119,7 @@ end
 #
 
 # reload fish
-alias reloaf="source $fish_config_path"
+alias :r="source $fish_config_path"
 
 # edit a file with the current date as the name
 alias vimdate='vim (date|sed "s/ /_/g")'
@@ -152,8 +155,15 @@ end
 
 
 # Start X at login
-if status is-login
-    if test -z "$DISPLAY" -a $XDG_VTNR = 1
-        exec startx -- -keeptty
+# if status is-login
+#     if test -z "$DISPLAY" -a $XDG_VTNR = 1
+#         exec startx -- -keeptty
+#     end
+# end
+
+function vf
+    if not set -q vf
+        eval (python -m virtualfish)
     end
+    vf
 end
