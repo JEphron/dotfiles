@@ -8,9 +8,9 @@ import XMonad.Layout.NoBorders ( smartBorders )
 import XMonad.Hooks.ManageDocks ( avoidStruts, manageDocks )
 import XMonad.Hooks.SetWMName
 import XMonad.Hooks.DynamicLog ( xmobar )
-import XMonad.Hooks.RefocusLast 
+import XMonad.Hooks.RefocusLast
 
-import XMonad.Hooks.ManageHelpers ( composeOne, (-?>), isDialog, doCenterFloat, transience, doSideFloat, Side( SW, SE ) )
+import XMonad.Hooks.ManageHelpers ( composeOne, (-?>), isDialog, doCenterFloat, transience, doSideFloat, Side( ..  ) )
 
 import XMonad.Actions.Launcher
 import XMonad.Actions.GroupNavigation ( Direction( History ), historyHook, nextMatch )
@@ -34,17 +34,18 @@ stConfig = "" --" -f " ++ myFont
 termCommand = "st" ++ stConfig
 
 launcherConfig = LauncherConfig
-    { 
+    {
       pathToHoogle = "/home/jephron/.local/bin/hoogle"
     , browser = "firefox"
     }
+
 
 myConfig = def
             {
                 terminal            = termCommand
               , focusFollowsMouse   = False
               , modMask             = mod1Mask
-              , startupHook = setWMName "LG3D"
+              , startupHook         = setWMName "LG3D"
               , focusedBorderColor  = "#335566"
               , normalBorderColor   = "#181000"
               , logHook             = refocusLastLogHook <+> historyHook
@@ -54,31 +55,52 @@ myConfig = def
                 ("M-S-t", spawn "st")                                                     -- new terminal
               , ("M-S-<Return>",trySpawnShellAtWindowCwd)                                 -- new terminal at cwd
               , ("M-C-q", spawn "slock")                                                  -- lock the screen
-              , ("M-<Space>",   shellPrompt myXPConfig)                                         -- app launcher
+              , ("M-<Space>",   shellPrompt myXPConfig)                                   -- app launcher
               , ("M-C-f", sendMessage $ Toggle FULL)                                      -- toggle fullscreen
-              -- , ("M-m",   nextMatch History (return True))                                -- MRU
               , ("M-S-s", withFocused $ windows . W.sink)                                 -- Push window back into tiling
               , ("M-S-q", confirmPrompt myXPConfig "exit" (io exitSuccess))               -- confirm quit x
               -- applications
               , ("M-x M-f", spawn "firefox")                                              -- Firefox
               , ("M-x M-r", spawn (termCommand ++ " ranger"))                             -- Ranger file browser
               , ("M-x M-i", spawn "idea")                                                 -- IntelliJ IDEA
-              , ("M-x M-e", spawn "emacs")                                       -- Emacs
+              , ("M-x M-e", spawn "emacs")                                                -- Emacs
               , ("M-x M-l", launcherPrompt myXPConfig $ defaultLauncherModes launcherConfig)
-              , ("M-S-p",   spawn "ffcast -s png ~/Screenshots/\"$(date +%F\\ %T)\".png") -- take screenshot
-              , ("<XF86AudioLowerVolume>" , spawn "pactl set-sink-mute 0 false; pactl set-sink-volume 0 -5%")
-              , ("<XF86AudioRaiseVolume>", spawn "pactl set-sink-mute 0 false; pactl set-sink-volume 0 +5%")
-              , ("<XF86AudioMute>", spawn "pactl set-sink-mute 0 toggle")
-              --, ("M-S-<Tab>", cycleRecentWS' [xK_Super_L, xK_Shift_L] xK_Tab xK_grave) ppp PPP
+              , ("M-C-4", takeScreenshot)
+              , ("<XF86AudioLowerVolume>" , tweakVolume "-5%")
+              , ("<XF86AudioRaiseVolume>", tweakVolume "+5%")
+              , ("<XF86AudioMute>", toggleAudioMute)
             ] `removeKeysP` [
                 "M-<Return>",
                 "M-S-a",
+                "M-S-p",
                 "M-S-o",
                 "M-S-p",
                 "M-S-r",
                 "M-r",
+                "M-j",
+                "M-n",
+                "M-m",
+                "M-S-j",
+                "M-k",
+                "C-b",
                 "M-p"
             ]
+
+playSound :: String -> String
+playSound sound =
+    "paplay /usr/share/sounds/freedesktop/stereo/" ++ sound ++ ".oga"
+
+takeScreenshot :: X ()
+takeScreenshot =
+    spawn $ "ffcast -s png ~/Screenshots/\"$(date +%F\\ %T)\".png && " ++ playSound "camera-shutter"
+
+tweakVolume :: String -> X ()
+tweakVolume amount =
+    spawn $ "pactl set-sink-mute 0 false; pactl set-sink-volume 0 " ++ amount ++ "% && " ++ playSound "audio-volume-change"
+
+toggleAudioMute :: X ()
+toggleAudioMute =
+    spawn $ "pactl set-sink-mute 0 toggle " ++ playSound "audio-volume-change"
 
 -- modified variant of cycleRecentWS from XMonad.Actions.CycleRecentWS (17)
 -- which does not include visible but non-focused workspaces in the cycle
@@ -127,7 +149,7 @@ trySpawnShellAtWindowCwd =
                     title <- runQuery title win
                     let cwd = unwords $ tail $ words title
                     spawn $ termCommand ++ " fish -C \"cd '" ++ cwd ++ "'\""
-                _ -> spawn termCommand 
+                _ -> spawn termCommand
     in
         withWindowSet $ \w -> case (W.peek w) of
             Just win -> spawnShellAtWindowCwd win
@@ -172,8 +194,7 @@ myManageHook = composeAll
   -- , className =? "processing-core-PApplet"   --> doSideFloat SW
   -- , className =? "processing-core-PApplet"   --> doF (fmap W.sink . W.peek )
   , isDialog              --> doCenterFloat
-  , title =? "FOOBAR"     --> doSideFloat SE <> (doF W.focusDown)-- >> doX (toggleFocus)  --  >> >> --doF (W.focusMaster)
-  
+  , title =? "FOOBAR"     --> doSideFloat NE <> (doF W.focusDown)-- >> doX (toggleFocus)  --  >> >> --doF (W.focusMaster)
   -- , transience                                   -- Move transient windows to their parent:
   ]
 
